@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Pomodoro V — Dark Arcade (25/5)</title>
+  <meta name="theme-color" content="#000000">
+  <style>
+    :root{
+      --bg:#000000;
+      --panel:#07100a;
+      --green:#39FF14; /* neon green */
+      --muted:#9aa7a0;
+      --glass: rgba(255,255,255,0.03);
+    }
+    html,body{height:100%;}
+    body{
+      margin:0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(57,255,20,0.02), transparent), var(--bg);
+      color:var(--muted);
+      display:flex; align-items:center; justify-content:center; padding:24px;
+    }
+    .container{
+      width:430px; max-width:95%; background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border-radius:16px; padding:20px; box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      border:1px solid rgba(57,255,20,0.06);
+    }
+    .header{display:flex; align-items:center; justify-content:space-between; gap:12px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg, rgba(57,255,20,0.12), rgba(57,255,20,0.04)); display:flex; align-items:center; justify-content:center; color:var(--green); font-weight:800; box-shadow: inset 0 -6px 20px rgba(0,0,0,0.6);}
+    h1{margin:0; font-size:18px; color:var(--green)}
+    p.sub{margin:0; font-size:12px; color:var(--muted)}
+
+    .clock{
+      display:flex; flex-direction:column; align-items:center; margin-top:18px; gap:14px; padding:12px 10px 18px;
+    }
+    .time{
+      font-family: 'Courier New', Courier, monospace; font-size:72px; color:var(--green); letter-spacing:2px; margin:0; line-height:1;
+      text-shadow:0 2px 12px rgba(57,255,20,0.08);
+    }
+    .mode{
+      font-size:14px; color:var(--muted);
+      display:flex; gap:10px; align-items:center;
+    }
+    .pill{padding:6px 10px; border-radius:999px; background:var(--glass); color:var(--muted); font-size:13px; border:1px solid rgba(255,255,255,0.02)}
+
+    .controls{display:flex; gap:10px; justify-content:center; margin-top:12px}
+    button.btn{background:transparent; border:1px solid rgba(57,255,20,0.12); color:var(--green); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:600}
+    button.btn.primary{background:linear-gradient(90deg, rgba(57,255,20,0.06), rgba(57,255,20,0.03));}
+    button.btn.destructive{border-color:rgba(255,50,50,0.14); color:#ff6b6b}
+
+    .settings{display:flex; align-items:center; justify-content:space-between; margin-top:16px; gap:12px}
+    .small{font-size:13px; color:var(--muted)}
+    .toggles{display:flex; gap:8px; align-items:center}
+    .dot{width:10px;height:10px;background:var(--green);border-radius:50%; box-shadow:0 0 12px rgba(57,255,20,0.18)}
+
+    .progress-wrap{margin-top:12px; display:flex; align-items:center; gap:12px}
+    .progress{height:8px; background: rgba(255,255,255,0.03); border-radius:6px; flex:1; overflow:hidden}
+    .bar{height:100%; background:linear-gradient(90deg, rgba(57,255,20,0.18), rgba(57,255,20,0.6)); width:0%; transition:width 0.3s linear}
+
+    footer.note{margin-top:14px; font-size:12px; color:var(--muted); text-align:center}
+
+    .install-btn{background:transparent; border:1px solid rgba(57,255,20,0.18); color:var(--green); padding:8px 10px; border-radius:8px; cursor:pointer}
+
+    /* responsive */
+    @media (max-width:420px){ .time{font-size:54px} }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">V</div>
+        <div>
+          <h1>Pomodoro V</h1>
+          <p class="sub">25 / 5 • Offline PWA-ready</p>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="pill">Mode: <strong id="cycle-mode" style="color:var(--green); margin-left:6px">Work</strong></div>
+      </div>
+    </div>
+
+    <div class="clock">
+      <div class="mode">
+        <span class="pill">Session: <span id="session-count">0</span></span>
+        <span class="pill">Next: <span id="next-label">Work</span></span>
+      </div>
+
+      <div>
+        <div id="time" class="time">25:00</div>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn" class="btn primary">Start</button>
+        <button id="pauseBtn" class="btn">Pause</button>
+        <button id="resetBtn" class="btn">Reset</button>
+        <button id="stopCycleBtn" class="btn destructive">Stop Cycle</button>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="small">Progress</div>
+        <div class="progress" aria-hidden="true"><div id="bar" class="bar"></div></div>
+        <div class="small" id="percent">0%</div>
+      </div>
+    </div>
+
+    <div class="settings">
+      <div class="small">Sound: Arcade</div>
+      <div class="toggles"><div class="dot"></div><div class="small">Dark • Neon</div></div>
+    </div>
+
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:12px">
+      <button id="installBtn" class="install-btn" style="display:none">Install Pomodoro V</button>
+    </div>
+
+    <footer class="note">Tip: Allow notifications when prompted. For reliable desktop notifications, consider serving via local server.</footer>
+  </div>
+
+  <script>
+    // --- PWA Assets embedded as data URLs ---
+    const iconSvg = `data:image/svg+xml;utf8,${encodeURIComponent(`
+      <svg xmlns='http://www.w3.org/2000/svg' width='512' height='512' viewBox='0 0 512 512'>
+        <rect width='100%' height='100%' fill='#000000' />
+        <g transform='translate(256,256)'>
+          <!-- pixel-ish neon circle -->
+          <circle r='180' fill='none' stroke='#39FF14' stroke-width='18' stroke-linecap='square' stroke-opacity='0.12'/>
+          <circle r='150' fill='none' stroke='#39FF14' stroke-width='12' stroke-linecap='butt' />
+          <!-- minute hand pointing to 25 minutes (150deg) -->
+          <rect x='-8' y='-8' width='16' height='140' rx='2' fill='#39FF14' transform='rotate(150)' />
+          <!-- hour hand shorter -->
+          <rect x='-8' y='-8' width='16' height='90' rx='2' fill='#39FF14' transform='rotate(20)' />
+          <!-- pixel V in center -->
+          <g transform='translate(-36,-20) scale(1.8)'>
+            <rect x='0' y='0' width='12' height='12' fill='#39FF14' />
+            <rect x='12' y='0' width='12' height='12' fill='#39FF14' />
+            <rect x='24' y='0' width='12' height='12' fill='#39FF14' />
+
+            <rect x='0' y='12' width='12' height='12' fill='#39FF14' />
+            <rect x='12' y='12' width='12' height='12' fill='black' />
+            <rect x='24' y='12' width='12' height='12' fill='#39FF14' />
+
+            <rect x='12' y='24' width='12' height='12' fill='#39FF14' />
+            <rect x='12' y='36' width='12' height='12' fill='#39FF14' />
+          </g>
+        </g>
+      </svg>
+    `)}`;
+
+    // Create a manifest blob and link it
+    const manifest = {
+      name: 'Pomodoro V',
+      short_name: 'Pomodoro V',
+      start_url: './',
+      display: 'standalone',
+      background_color: '#000000',
+      theme_color: '#000000',
+      icons: [
+        { src: iconSvg, sizes: '512x512', type: 'image/svg+xml' }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestURL;
+    document.head.appendChild(link);
+
+    // Service worker code as blob (simple offline cache)
+    const swCode = `
+      const CACHE_NAME = 'pomodoro-v-cache-v1';
+      const ASSETS = ['/', location.pathname];
+      self.addEventListener('install', (e)=>{
+        self.skipWaiting();
+        e.waitUntil(caches.open(CACHE_NAME).then(c=>c.addAll(ASSETS)));
+      });
+      self.addEventListener('activate', (e)=>{ e.waitUntil(self.clients.claim()); });
+      self.addEventListener('fetch', (e)=>{
+        e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));
+      });
+    `;
+    const swBlob = new Blob([swCode], {type: 'text/javascript'});
+    const swURL = URL.createObjectURL(swBlob);
+
+    // Register service worker from blob URL
+    if ('serviceWorker' in navigator){
+      navigator.serviceWorker.register(swURL).catch(e=>console.warn('SW register failed', e));
+    }
+
+    // --- Existing Pomodoro logic ---
+    const WORK_SECONDS = 25 * 60;
+    const BREAK_SECONDS = 5 * 60;
+    let secondsLeft = WORK_SECONDS;
+    let isRunning = false;
+    let isWork = true;
+    let timerInterval = null;
+    let sessionCount = 0;
+
+    const timeEl = document.getElementById('time');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const stopCycleBtn = document.getElementById('stopCycleBtn');
+    const cycleModeEl = document.getElementById('cycle-mode');
+    const nextLabelEl = document.getElementById('next-label');
+    const sessionCountEl = document.getElementById('session-count');
+    const barEl = document.getElementById('bar');
+    const percentEl = document.getElementById('percent');
+    const installBtn = document.getElementById('installBtn');
+
+    function fmt(s){
+      const m = Math.floor(s/60).toString().padStart(2,'0');
+      const ss = (s%60).toString().padStart(2,'0');
+      return `${m}:${ss}`;
+    }
+    function updateDisplay(){
+      timeEl.textContent = fmt(secondsLeft);
+      cycleModeEl.textContent = isWork ? 'Work' : 'Break';
+      nextLabelEl.textContent = isWork ? 'Break' : 'Work';
+      sessionCountEl.textContent = sessionCount;
+      const total = isWork ? WORK_SECONDS : BREAK_SECONDS;
+      const pct = Math.round(((total - secondsLeft) / total) * 100);
+      barEl.style.width = pct + '%';
+      percentEl.textContent = pct + '%';
+    }
+
+    function playArcade(){
+      try{
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'square';
+        const now = ctx.currentTime;
+        o.frequency.setValueAtTime(880, now);
+        o.frequency.exponentialRampToValueAtTime(440, now + 0.18);
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.8, now + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+        o.connect(g); g.connect(ctx.destination);
+        o.start(now); o.stop(now + 0.5);
+      }catch(e){ console.warn('Sound failed:', e); }
+    }
+
+    function notify(title, body){
+      if (window.Notification && Notification.permission === 'granted'){
+        try{ new Notification(title, {body, silent: true}); }catch(e){ console.warn('Notification failed', e); }
+      } else { showToast(body); }
+    }
+    function showToast(msg){
+      const t = document.createElement('div');
+      t.textContent = msg;
+      Object.assign(t.style,{
+        position:'fixed', right:'20px', bottom:'20px', background:'#0b1b14', color:'var(--green)', padding:'12px 14px', borderRadius:'10px', boxShadow:'0 6px 22px rgba(0,0,0,0.7)', border:'1px solid rgba(57,255,20,0.06)', zIndex:9999, fontSize:'13px'
+      });
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.style.transition='opacity 0.5s'; t.style.opacity='0'; }, 2500);
+      setTimeout(()=>{ t.remove(); }, 3200);
+    }
+
+    function wittyMessageWorkToBreak(){ return "Look at you, being productive. Now take that 5-minute victory break!"; }
+    function wittyMessageBreakToWork(){ return "Fun's over. Time to pretend you're focused again!"; }
+
+    function tick(){
+      if (secondsLeft > 0){ secondsLeft -= 1; updateDisplay(); }
+      else {
+        if (isWork){ sessionCount += 1; playArcade(); notify('Work session complete', wittyMessageWorkToBreak()); isWork = false; secondsLeft = BREAK_SECONDS; updateDisplay(); }
+        else { playArcade(); notify('Break finished', wittyMessageBreakToWork()); isWork = true; secondsLeft = WORK_SECONDS; updateDisplay(); }
+      }
+    }
+
+    function startTimer(){ if (!isRunning){ isRunning = true; timerInterval = setInterval(tick, 1000); startBtn.textContent = 'Running...'; startBtn.disabled = true; }}
+    function pauseTimer(){ if (isRunning){ isRunning = false; clearInterval(timerInterval); startBtn.textContent = 'Start'; startBtn.disabled = false; }}
+    function resetTimer(){ pauseTimer(); isWork = true; secondsLeft = WORK_SECONDS; sessionCount = 0; updateDisplay(); }
+    function stopCycle(){ pauseTimer(); isWork = true; secondsLeft = WORK_SECONDS; sessionCount = 0; updateDisplay(); showToast('Pomodoro cycle stopped — good rest!'); }
+
+    startBtn.addEventListener('click', async ()=>{
+      if (window.Notification && Notification.permission !== 'granted' && Notification.permission !== 'denied'){
+        try{ await Notification.requestPermission(); }catch(e){ console.warn('Notification request failed', e); }
+      }
+      startTimer();
+    });
+    pauseBtn.addEventListener('click', ()=>{ pauseTimer(); });
+    resetBtn.addEventListener('click', ()=>{ resetTimer(); });
+    stopCycleBtn.addEventListener('click', ()=>{ stopCycle(); });
+
+    // install prompt handling
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e)=>{
+      e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'inline-block';
+    });
+    installBtn.addEventListener('click', async ()=>{
+      if (deferredPrompt){ deferredPrompt.prompt(); const choice = await deferredPrompt.userChoice; deferredPrompt = null; installBtn.style.display='none'; }
+    });
+
+    updateDisplay();
+    window.addEventListener('keydown', (e)=>{ const key = e.key.toLowerCase(); if (key === 's') startBtn.click(); if (key === 'p') pauseBtn.click(); if (key === 'r') resetBtn.click(); if (key === 'x') stopCycleBtn.click(); });
+
+    (function suggestServer(){ if (location.protocol === 'file:'){ const note = document.querySelector('.note'); note.textContent = 'Tip: Notifications & install prompt may be limited when opened as file:// — serve via a local server (e.g. `python -m http.server`) for best experience.'; } })();
+  </script>
+</body>
+</html>
